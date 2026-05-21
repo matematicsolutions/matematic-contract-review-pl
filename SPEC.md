@@ -234,3 +234,68 @@ Klucze providerow **NIGDY** w kodzie skilla. **NIGDY** w outputach. **NIGDY** w 
 - Multi-tenant z RLS
 - Postgres persistence
 - Real-time chat over dataset
+
+## Operational patterns v0.1.1 (cherry-pick z gregmos/PII-Shield MIT)
+
+3 patternu architektoniczne dodane w v0.1.1 (2026-05-21) - cherry-pick z
+[gregmos/PII-Shield](https://github.com/gregmos/PII-Shield) (MIT, autor
+Grigorii Moskalev - Microsoft Presidio team, snapshot v2.0.2). Patterny
+operacyjne, NIE zmieniaja 4 zasad konstytucyjnych:
+
+### Pattern 1: `pseudonim_audit.log` "proves no PII leaves"
+
+Osobny plain-text log file `~/.config/contract-review-pl/pseudonim_audit.log`
+**czytelny dla Inspektora ochrony danych** (bez wymogu odszyfrowania
+hash-chain). Per linia:
+
+```
+2026-05-21T18:42:13Z | pseudonim-applied | doc_id=01HXY... | source_hash=sha256:abc123... | entities={OSOBA:3,PESEL:1,NIP:2,ADRES:1} | bytes_in=12450 | bytes_out=12180
+2026-05-21T18:42:14Z | llm-call-out | provider=ollama | model=llama3.3:70b | prompt_chars=8200 | placeholders=12 | PII_count=0
+2026-05-21T18:42:18Z | llm-call-in | provider=ollama | response_chars=240 | cytat_present=true
+2026-05-21T18:42:18Z | mapping-stored | doc_id=01HXY... | expires_at=2026-05-28T18:42:18Z | bytes=2340
+2026-05-21T18:45:01Z | docx-generated | output=/folder/RAPORT-...docx | session_id=01HXY... | depseudonim_count=12
+2026-05-21T18:45:01Z | mapping-cleanup | TTL=7days | removed_sessions=0
+```
+
+Linia `llm-call-out` z `PII_count=0` jest **dowodem** ze pseudonimizacja zadziala (bo `PII_count` zlicza wszystkie znalezione PESEL/NIP/imiona w **promptcie wyslanym do LLM** - jezeli > 0, skill **ZATRZYMUJE** wywolanie i raportuje bug).
+
+Linie sa **rownolegle do** istniejacego workflow, nie zastepuja walidacji pseudonimizacji (Zasada 1 nadal bezwzgledna).
+
+**Implementacja**: `skills/contract-review-pl/helpers/audit-logger.py` (nowy plik v0.1.1).
+
+### Pattern 2: `session_id` w docx custom properties
+
+Kazdy `.docx` generowany przez skill ma `session_id` (UUID) embed w **custom properties** Word - tygodnie pozniej skill rozpoznaje sesje i moze:
+
+- Pokazac uzytkownikowi historie generacji (data, provider, hash konfiguracji)
+- Powtorzyc raport z innym providerem (jezeli mapping wciaz w TTL)
+- Re-deanonymize fragmenty (jezeli prawnik chce wrocic do PII po zlozeniu raportu)
+
+Workflow:
+
+1. Skill generuje `session_id = ULID()`
+2. Mapping zapisany do `~/.config/contract-review-pl/sessions/{session_id}.json` (gitignore, AES-256-GCM szyfrowanie scrypt-derived key z hasla uzytkownika)
+3. `.docx` ma custom properties: `MateMaticContractReviewSessionId = {session_id}`, `MateMaticContractReviewToolVersion = v0.1.1`, `MateMaticContractReviewTimestamp = ISO8601`
+4. Pozniej: `contract-review-pl --reopen-session ~/Desktop/RAPORT-....docx` czyta custom properties, ladowuje sesje, oferuje akcje
+
+**Implementacja**: `skills/contract-review-pl/helpers/docx-session-tagging.py` + rozszerzenie `helpers/generuj_docx.py` (nowe v0.1.1).
+
+### Pattern 3: TTL mapping cleanup (default 7 dni, configurable)
+
+Mapping placeholder ↔ wartosc zywa **wygasa** po N dniach (default 7, configurable w `~/.config/contract-review-pl/policy.yaml`):
+
+```yaml
+# ~/.config/contract-review-pl/policy.yaml
+pseudonim_mapping_ttl_days: 7  # default; mozesz ustawic 180 dla long-running M&A
+auto_cleanup_on_invocation: true  # przy kazdym uruchomieniu skilla, sprawdz expired sessions
+```
+
+Skill przy **kazdym uruchomieniu** sprawdza `~/.config/contract-review-pl/sessions/`, usuwa pliki sesji ktore `expires_at < now`. Wpis do `pseudonim_audit.log`: `mapping-cleanup | TTL=7days | removed_sessions=3 | reclaimed_bytes=12480`.
+
+**Wartosc**: RODO art. 5 ust. 1 lit. e (ograniczenie przechowywania) - mapping placeholder ↔ wartosc zywa to PII derivative, retencja minimalna.
+
+**Implementacja**: `skills/contract-review-pl/helpers/mapping-cleanup.py` (nowy plik v0.1.1).
+
+## Atrybucja patternow 1-3
+
+Patterny operacyjne 1-3 sa cherry-pick z [gregmos/PII-Shield](https://github.com/gregmos/PII-Shield) (MIT, snapshot 2026-05-21, autor Grigorii Moskalev). NIE forkujemy kodu - implementacja w naszym skillu napisana od zera pod Python helpers + polskie nazewnictwo + integracja z 4 zasadami konstytucyjnymi v1.0.0.

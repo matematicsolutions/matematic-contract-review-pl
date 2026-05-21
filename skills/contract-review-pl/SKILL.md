@@ -120,11 +120,53 @@ Uzywa `helpers/generuj_docx.py` (python-docx) lub pandoc markdown -> docx z temp
 
 Output: `{folder_umow}/RAPORT-contract-review-{YYYY-MM-DD}.docx`
 
-### Faza 8: Cleanup
+### Faza 8: Cleanup + TTL mapping check
 
 1. **Usun** `/tmp/contract-review-pl/{umowa_id}/mapping.json` (PII!)
 2. **Zachowaj** `/tmp/contract-review-pl/{umowa_id}/tekst_pseudonimowany.md` przez 24h dla debug (jezeli prawnik chce sprawdzic co dokladnie poszlo do LLM)
-3. **Wpis audit log** lokalny w `~/.config/contract-review-pl/audit.log` (data, liczba umow, provider, brak PII)
+3. **Wpis audit log** w `~/.config/contract-review-pl/pseudonim_audit.log` (plain-text, czytelny dla Inspektora - patrz Faza 9)
+4. **TTL mapping cleanup** (v0.1.1) - skill przy kazdym uruchomieniu sprawdza `~/.config/contract-review-pl/sessions/`, usuwa sesje ktore `expires_at < now` (default 7 dni, configurable w `policy.yaml`). Wpis audit: `mapping-cleanup | TTL=Ndays | removed_sessions=N | reclaimed_bytes=N`.
+
+### Faza 9: Audit log "proves no PII leaves" (v0.1.1, cherry-pick z PII-Shield)
+
+Osobny plain-text log `~/.config/contract-review-pl/pseudonim_audit.log` jako **dowod dla Inspektora ochrony danych** ze PII nie opuscilo maszyny. Format per linia:
+
+```
+{ISO8601-timestamp} | {event} | doc_id={ULID} | source_hash=sha256:{hex} | entities={tagi:count} | bytes_in={N} | bytes_out={N}
+```
+
+Krytyczne eventy logowane:
+
+- `pseudonim-applied` - po zakonczeniu Fazy 2 (pseudonimizacja PII), z liczeniem entities per typ
+- `llm-call-out` - PRZED wywolaniem LLM, `PII_count=0` jest **dowodem** ze prompt jest czysty (jezeli > 0 -> skill ZATRZYMUJE i raportuje bug)
+- `llm-call-in` - po odpowiedzi LLM, `cytat_present=true/false`
+- `mapping-stored` - zapis sesji do `sessions/{session_id}.json` z `expires_at`
+- `docx-generated` - po Fazy 7, z `session_id` + liczba depseudonimizowanych pol
+- `mapping-cleanup` - po Fazy 8, liczba usunietych sesji TTL-expired
+
+**Inspektor moze otworzyc `pseudonim_audit.log` w 5 minut i zweryfikowac** ze:
+1. Liczba `pseudonim-applied` == liczba `llm-call-out` (kazde wyslanie LLM bylo poprzedzone pseudonimizacja)
+2. Wszystkie `llm-call-out` maja `PII_count=0`
+3. `mapping-cleanup` dziala (mappings nie zyja wiecznie)
+
+**Implementacja**: `helpers/audit-logger.py` (v0.1.1).
+
+### Faza 10: session_id w docx custom properties (v0.1.1, cherry-pick z PII-Shield)
+
+Generowany `.docx` ma w **custom properties** Word embed `session_id`:
+
+- `MateMaticContractReviewSessionId` = ULID sesji
+- `MateMaticContractReviewToolVersion` = "v0.1.1"
+- `MateMaticContractReviewTimestamp` = ISO8601
+
+Tygodnie pozniej prawnik moze otworzyc plik: `contract-review-pl --reopen-session ~/Desktop/RAPORT-....docx`. Skill czyta custom properties, ladowuje sesje (jezeli mapping w TTL), oferuje akcje:
+
+- Pokaz historie generacji (data, provider, hash konfiguracji)
+- Powtorz raport z innym providerem (jezeli mapping wciaz wazny)
+- Re-deanonymize fragment (jezeli mapping wciaz wazny)
+- Jezeli mapping wygasl: komunikat "mapping TTL expired YYYY-MM-DD, akceptacja Inspektora wymagana do re-anonymize"
+
+**Implementacja**: `helpers/docx-session-tagging.py` + rozszerzenie `helpers/generuj_docx.py` (v0.1.1).
 
 ## Judgment calls embedded
 
