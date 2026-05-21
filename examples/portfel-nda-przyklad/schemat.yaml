@@ -1,0 +1,70 @@
+# schemat.yaml - default dla portfela NDA
+# Skopiuj do folderu z umowami i dostosuj.
+
+naglowek_kancelarii:
+  nazwa: "Kancelaria XYZ"                       # zamien na nazwe Twojej kancelarii
+  adres: "ul. Przykladowa 1, 00-000 Warszawa"   # zamien na adres Twojej kancelarii
+  # logo: "~/.config/contract-review-pl/logo.png"  # opcjonalne, scieżka do PNG
+
+llm_provider: "ollama"          # ollama / claude / gemini / gpt
+llm_model: "llama3.3:70b"       # nazwa modelu providera
+
+pseudonimizacja:
+  imiona_nazwiska: true         # BEZWZGLEDNE - nie wylaczaj bez decyzji kancelarii
+  pesel: true                   # BEZWZGLEDNE
+  nip: true                     # BEZWZGLEDNE
+  regon: true
+  iban: true
+  adresy: true
+  emaile: true
+  nazwy_firm: false             # opcjonalne (--anonymize-companies)
+
+kolumny:
+  - id: "data_podpisania"
+    prompt: "Jaka jest data podpisania umowy? Format YYYY-MM-DD. Jezeli nie podana - null."
+    typ: "data"
+    cytat_required: true
+
+  - id: "strona_A"
+    prompt: "Kim jest pierwsza strona umowy? Pelna nazwa firmy + NIP jezeli widoczny."
+    typ: "tekst"
+    cytat_required: true
+
+  - id: "strona_B"
+    prompt: "Kim jest druga strona umowy? Pelna nazwa firmy + NIP jezeli widoczny."
+    typ: "tekst"
+    cytat_required: true
+
+  - id: "czas_trwania_NDA"
+    prompt: "Ile lat trwa zobowiazanie do zachowania poufnosci? Tylko liczba (np. 5). Jezeli bezterminowo - zwroc 'bezterminowo'."
+    typ: "liczba_lub_tekst"
+    cytat_required: true
+    red_flag_jezeli: "> 5 OR bezterminowo"
+
+  - id: "wylaczenia"
+    prompt: "Jakie sa wylaczenia z obowiazku poufnosci? Wymien wszystkie (publicznie znane / od osoby trzeciej / nakaz sadowy / niezalezne opracowanie / inne). Jezeli brak - 'brak'."
+    typ: "tekst"
+    cytat_required: true
+    red_flag_jezeli: "brak"
+
+  - id: "kara_umowna"
+    prompt: "Jaka jest wysokosc kary umownej za naruszenie poufnosci? Tylko kwota + waluta lub 'brak' jezeli nie ma."
+    typ: "tekst"
+    cytat_required: true
+    red_flag_jezeli: "brak"  # brak kary = trudna egzekucja
+
+  - id: "prawo_wlasciwe"
+    prompt: "Jakie prawo jest wlasciwe dla tej umowy? (Polska / inne - podaj jakie)"
+    typ: "tekst"
+    cytat_required: true
+    red_flag_jezeli: "!= Polska"  # prawo obce dla polskiej kancelarii = ryzyko
+
+  - id: "sad_wlasciwy"
+    prompt: "Ktory sad jest wlasciwy dla sporow z tej umowy?"
+    typ: "tekst"
+    cytat_required: true
+
+  - id: "klauzula_non_solicitation"
+    prompt: "Czy jest klauzula non-solicitation (zakaz przejmowania pracownikow / klientow)? Jezeli tak - na jaki czas? Jezeli brak - 'brak'."
+    typ: "tekst"
+    cytat_required: true

@@ -1,0 +1,38 @@
+# Klucze providerow LLM - NIGDY do commita
+providers.yaml
+*providers*.yaml
+.env
+.env.*
+
+# Mapowanie pseudonimizacji (PII!) - NIGDY do commita
+mapping.json
+**/mapping.json
+/tmp/contract-review-pl/
+
+# Audit log lokalny
+audit.log
+*.audit.log
+
+# Pythonowe artefakty helpera
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Outputy testowe (raporty .docx z umow testowych)
+RAPORT-contract-review-*.docx
+examples/**/RAPORT-*.docx
+
+# Backup pliki
+*.bak
+*~
