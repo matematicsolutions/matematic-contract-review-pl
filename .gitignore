@@ -36,3 +36,6 @@ examples/**/RAPORT-*.docx
 # Backup pliki
 *.bak
 *~
+
+# Claude Code local overrides (lokalne settings, nie commit)
+.claude/*.local.*

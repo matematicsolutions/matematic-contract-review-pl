@@ -58,7 +58,7 @@ Konsekwencja:
 
 ## Bramki commit (przed merge do main)
 
-1. **Marko-pl 2x runda** na SKILL.md + README.md + CONSTITUTION.md (zarzuty -> poprawki -> "ok")
+1. **Wewnetrzny review tresci (2 rundy)** na SKILL.md + README.md + CONSTITUTION.md (zarzuty -> poprawki -> "ok")
 2. **Test na zanonimizowanym portfelu** w `examples/` - skill produkuje sensowny `.docx`
 3. **Walidacja PSEUDONIMIZACJA** - test e2e ze niezanonimizowany PESEL / imie **nigdy** nie idzie do LLM (mock LLM + assert na zawartosci promptu)
 4. **Bramka jakosci output** - tabela ma kolory RAG, sekcja "Luki" istnieje, sekcja "Cytaty zrodlowe" istnieje, naglowek kancelarii konfigurowalny

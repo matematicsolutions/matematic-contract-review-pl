@@ -69,7 +69,7 @@ Na Windows zamiast symlinka - kopia folderu `skills/contract-review-pl/` do `~/.
 - **RAG framework** - kazda umowa dostaje status Czerwony / Bursztynowy / Zielony per zdefiniowane czerwone flagi.
 - **Output `.docx` z naglowkiem kancelarii** - gotowy do wyslania do partnera, nie do przepisywania.
 - **Bez polskich znakow w commit messages** (konwencja organizacji).
-- **Marko-pl 2x runda** przed kazdym commitem zmieniajacym tresc SKILL.md / README.md / CONSTITUTION.md.
+- **Wewnetrzny review tresci (2 rundy)** przed kazdym commitem zmieniajacym tresc SKILL.md / README.md / CONSTITUTION.md.
 
 ## Czego NIE robic (twarde reguly)
 
