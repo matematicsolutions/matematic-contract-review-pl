@@ -1,81 +1,81 @@
 # CONSTITUTION.md - matematic-contract-review-pl
 
-**Wersja**: v1.0.0
-**Data**: 2026-05-21
-**Status**: Obowiazujaca
+**Version**: v1.0.0
+**Date**: 2026-05-21
+**Status**: In force
 
-Cztery zasady konstytucyjne pod ktorymi piszemy skill `contract-review-pl`. Modyfikacja tych zasad wymaga bump wersji v1.x.0 i akceptacji w PR.
+The four constitutional principles under which we write the `contract-review-pl` skill. Modifying these principles requires a v1.x.0 version bump and approval in a PR.
 
-## Zasada 1: RODO-safe by default
+## Principle 1: GDPR-safe by default
 
-Skill **NIE wysyla niezanonimizowanych danych osobowych do LLM**. Pseudonimizacja PII PRZED kazdym wywolaniem LLM jest **bezwzgledna**.
+The skill **does NOT send un-anonymized personal data to an LLM**. Pseudonymization of PII BEFORE every LLM call is **absolute**.
 
-Co znaczy "PRZED kazdym wywolaniem":
-- Imie / nazwisko / PESEL / NIP / adres / numer rachunku / email osoby fizycznej zamieniane na placeholdery `[OSOBA_1]`, `[PESEL_1]`, `[ADRES_1]` itp.
-- Mapowanie placeholder <-> wartosc zywa **NIGDY** nie idzie do LLM. Trzymane w pamieci skill, uzywane tylko do depseudonimizacji outputu lokalnie.
-- Nazwy firm (KRS) **nie sa PII** ale moga byc poufne (klient kancelarii). Skill **opcjonalnie** pseudonimizuje nazwy firm (`[FIRMA_1]`) - decyzja uzytkownika przez flage `--anonymize-companies`.
+What "BEFORE every call" means:
+- First name / surname / PESEL / NIP / address / bank account number / email of a natural person are replaced with placeholders `[OSOBA_1]`, `[PESEL_1]`, `[ADRES_1]` etc.
+- The placeholder <-> live-value mapping **NEVER** goes to the LLM. It is held in the skill's memory, used only to de-pseudonymize the output locally.
+- Company names (KRS - the National Court Register) **are not PII** but may be confidential (a law firm's client). The skill **optionally** pseudonymizes company names (`[FIRMA_1]`) - the user's decision via the `--anonymize-companies` flag.
 
-Konsekwencja:
-- Skill **dziala wolniej** (dodatkowa warstwa preprocessingu) - akceptowalny koszt.
-- Skill **wymaga uzycia LLM ktory rozumie pseudonimizowany tekst** - wszystkie nowoczesne LLM to potrafia, nie jest problem.
+Consequence:
+- The skill **runs slower** (an extra preprocessing layer) - an acceptable cost.
+- The skill **requires the use of an LLM that understands pseudonymized text** - all modern LLMs can do this, it is not a problem.
 
-## Zasada 2: Multi-provider LLM (vendor-neutrality)
+## Principle 2: Multi-provider LLM (vendor-neutrality)
 
-Skill **rozmawia z dowolnym LLM** wedlug konfiguracji uzytkownika:
+The skill **talks to any LLM** according to the user's configuration:
 
-- **Ollama lokalny** (default, RODO-safe maximum) - llama 3.3 / qwen 2.5 / mistral / inne
+- **Local Ollama** (default, maximum GDPR-safe) - llama 3.3 / qwen 2.5 / mistral / others
 - **Claude** (Anthropic) - sonnet / opus
 - **Gemini** (Google) - flash / pro
 - **GPT** (OpenAI) - 4o / o1
 
-Wybor LLM = **decyzja kancelarii**, nie skilla. Skill nie faworyzuje zadnego providera w defaultach (oprocz Ollama dla RODO-safe).
+The choice of LLM is the **law firm's decision**, not the skill's. The skill does not favor any provider in its defaults (except Ollama for GDPR-safe).
 
-Cherry-pick lekcja z [jamietso/Tabular_Review](https://github.com/jamietso/Tabular_Review): tamten skill **hardcoduje** Gemini i bundluje API key do frontendu (anti-pattern security). My **nie powtarzamy** - klucze providerow w `~/.config/contract-review-pl/providers.yaml` (gitignore), nigdy w kodzie skilla, nigdy w outputach.
+Cherry-picked lesson from [jamietso/Tabular_Review](https://github.com/jamietso/Tabular_Review): that skill **hardcodes** Gemini and bundles the API key into the frontend (a security anti-pattern). We **do not repeat** this - provider keys live in `~/.config/contract-review-pl/providers.yaml` (gitignored), never in the skill's code, never in outputs.
 
-## Zasada 3: Cytat fizycznie obecny w tekscie zrodlowym
+## Principle 3: Citation physically present in the source text
 
-Kazda komorka tabeli **musi miec cytat** (fragment tekstu umowy zrodlowej) **mechanicznie zwerifikowany** (substring match z tolerancja whitespace).
+Every table cell **must have a citation** (a fragment of the source contract text) **mechanically verified** (substring match with whitespace tolerance).
 
 Workflow:
-1. LLM zwraca: wartosc komorki + cytat (np. `wartosc: "5 lat"`, `cytat: "Czas trwania zobowiazania poufnosci wynosi 5 (pieciu) lat"`)
-2. Skill **mechanicznie szuka cytatu** w tekscie umowy zrodlowej (case-insensitive, whitespace-tolerant)
-3. **Jezeli cytat istnieje**: komorka `confidence: high`, cytat zapisany w sekcji "Cytaty zrodlowe" outputu
-4. **Jezeli cytat NIE istnieje** (halucynacja LLM): komorka `null` + `confidence: failed`, wpis do sekcji "Luki" outputu
+1. The LLM returns: cell value + citation (e.g. `wartosc: "5 lat"`, `cytat: "Czas trwania zobowiazania poufnosci wynosi 5 (pieciu) lat"`)
+2. The skill **mechanically searches for the citation** in the source contract text (case-insensitive, whitespace-tolerant)
+3. **If the citation exists**: cell `confidence: high`, the citation is recorded in the "Source citations" section of the output
+4. **If the citation does NOT exist** (LLM hallucination): cell `null` + `confidence: failed`, an entry in the "Gaps" section of the output
 
-Konsekwencja:
-- **Halucynacja niemozliwa na warstwie struktury** - model moze zle zinterpretowac fragment, ale nie wymysli klauzuli ktorej fizycznie nie ma.
-- Skill **swiadomie zwraca puste komorki** zamiast falszywych - lepiej "luka" niz "false confident".
-- Prawnik dostaje **zweryfikowany dataset**, nie "AI-summarized" probability.
+Consequence:
+- **Hallucination is impossible at the structural layer** - the model may misinterpret a fragment, but it will not invent a clause that physically does not exist.
+- The skill **deliberately returns empty cells** instead of false ones - a "gap" is better than "false confident".
+- The lawyer gets a **verified dataset**, not an "AI-summarized" probability.
 
-## Zasada 4: Bez nazywania firm w outputach summary
+## Principle 4: No naming of companies in summary outputs
 
-Skill **nie nazywa firm w sekcji summary i czerwonych flagach**. Mowi "Strona A", "Strona B", "Dostawca", "Klient", "Wykonawca", "Zamawiajacy".
+The skill **does not name companies in the summary section and red flags**. It says "Party A", "Party B", "Supplier", "Client", "Contractor", "Ordering party".
 
-Konsekwencja:
-- Output **mozna przekazac wewnatrz kancelarii** (junior do partnera) bez wycieku informacji ktora umowa od ktorego klienta.
-- Pelne nazwy stron sa w **tabeli glownej** (kolumna "Strona A" / "Strona B") gdzie sa wprost wyciagniete z umow - bo to dokumenty, ktore prawnik czyta i tak.
-- Cytaty zrodlowe (sekcja na koncu raportu) sa **pelne** (z nazwami) - to surowe dane do weryfikacji, nie summary.
+Consequence:
+- The output **can be passed around inside the law firm** (junior to partner) without leaking which contract came from which client.
+- The full party names are in the **main table** (columns "Party A" / "Party B") where they are extracted directly from the contracts - because these are documents the lawyer reads anyway.
+- The source citations (the section at the end of the report) are **complete** (with names) - this is raw data for verification, not a summary.
 
-## Bramki commit (przed merge do main)
+## Commit gates (before merge to main)
 
-1. **Wewnetrzny review tresci (2 rundy)** na SKILL.md + README.md + CONSTITUTION.md (zarzuty -> poprawki -> "ok")
-2. **Test na zanonimizowanym portfelu** w `examples/` - skill produkuje sensowny `.docx`
-3. **Walidacja PSEUDONIMIZACJA** - test e2e ze niezanonimizowany PESEL / imie **nigdy** nie idzie do LLM (mock LLM + assert na zawartosci promptu)
-4. **Bramka jakosci output** - tabela ma kolory RAG, sekcja "Luki" istnieje, sekcja "Cytaty zrodlowe" istnieje, naglowek kancelarii konfigurowalny
+1. **Internal content review (2 rounds)** on SKILL.md + README.md + CONSTITUTION.md (charges -> fixes -> "ok")
+2. **Test on the anonymized portfolio** in `examples/` - the skill produces a sensible `.docx`
+3. **PSEUDONYMIZATION validation** - an e2e test that an un-anonymized PESEL / first name **never** goes to the LLM (mock LLM + assert on the prompt content)
+4. **Output quality gate** - the table has RAG colors, a "Gaps" section exists, a "Source citations" section exists, the firm letterhead is configurable
 
-## Ewolucja
+## Evolution
 
-Konstytucja jest **wersjonowana SEMVER**:
-- **MAJOR** (v1.0.0 -> v2.0.0): zmiana podstawowa (np. rezygnacja z multi-provider).
-- **MINOR** (v1.0.0 -> v1.1.0): dodanie nowej zasady (np. zasada 5).
-- **PATCH** (v1.0.0 -> v1.0.1): doprecyzowanie istniejacej zasady bez zmiany merytorycznej.
+The constitution is **versioned with SEMVER**:
+- **MAJOR** (v1.0.0 -> v2.0.0): a fundamental change (e.g. dropping multi-provider).
+- **MINOR** (v1.0.0 -> v1.1.0): adding a new principle (e.g. principle 5).
+- **PATCH** (v1.0.0 -> v1.0.1): clarifying an existing principle without a substantive change.
 
-Kazda zmiana wymaga PR + akceptacji + bump CHANGELOG.md.
+Every change requires a PR + approval + a CHANGELOG.md bump.
 
-## Powiazane
+## Related
 
-- [README.md](README.md) - opis dla ludzi
-- [SPEC.md](SPEC.md) - specyfikacja techniczna v0.1.0-alpha
-- [skills/contract-review-pl/SKILL.md](skills/contract-review-pl/SKILL.md) - implementacja zasad
-- [Patron Konstytucja](https://github.com/matematicsolutions/patron/blob/main/governance/CONSTITUTION.md) - vendor-neutrality Art. 4 (zrodlo Zasady 2)
-- [AGENTS.md](AGENTS.md) - instrukcje dla agentow AI pracujacych z tym repo
+- [README.md](README.md) - human-facing description
+- [SPEC.md](SPEC.md) - technical specification v0.1.0-alpha
+- [skills/contract-review-pl/SKILL.md](skills/contract-review-pl/SKILL.md) - implementation of the principles
+- [Patron Constitution](https://github.com/matematicsolutions/patron/blob/main/governance/CONSTITUTION.md) - vendor-neutrality Art. 4 (source of Principle 2)
+- [AGENTS.md](AGENTS.md) - instructions for AI agents working with this repo
