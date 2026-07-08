@@ -1,58 +1,58 @@
 # AGENTS.md - matematic-contract-review-pl
 
-Plik standardu [agents.md](https://agents.md) (Linux Foundation / Agentic AI Foundation) - kanoniczne instrukcje dla agentow AI pracujacych z tym repozytorium. Czytany natywnie przez Cursor, Codex (OpenAI), Jules (Google), Devin / Windsurf, Aider, Amp, Factory, GitHub Copilot.
+An [agents.md](https://agents.md) standard file (Linux Foundation / Agentic AI Foundation) - canonical instructions for AI agents working with this repository. Read natively by Cursor, Codex (OpenAI), Jules (Google), Devin / Windsurf, Aider, Amp, Factory, GitHub Copilot.
 
-## Cel projektu
+## Project goal
 
-`matematic-contract-review-pl` to otwarty **skill Claude Code** do **bulk audit umow** w polskiej kancelarii. Kopiujesz folder PDF/DOCX, definiujesz schemat kolumn, skill zwraca `.docx` z tabela (wiersz = umowa, kolumna = pole) + czerwone flagi + cytaty zrodlowe.
+`matematic-contract-review-pl` is an open **Claude Code skill** for **bulk contract audit** in a Polish law firm. You copy in a folder of PDF/DOCX files, define a column schema, and the skill returns a `.docx` with a table (row = contract, column = field) plus red flags plus source citations.
 
-Inspiracja cherry-pick: [jamietso/Tabular_Review](https://github.com/jamietso/Tabular_Review) (MIT). Tresc skilla **napisana od zera** pod polskie realia (RODO, PoA art. 6, URP art. 3, AI Act).
+Cherry-pick inspiration: [jamietso/Tabular_Review](https://github.com/jamietso/Tabular_Review) (MIT). The skill content is **written from scratch** for Polish reality (RODO - the GDPR as implemented in Poland, PoA art. 6, URP art. 3, AI Act).
 
-**To nie jest [Patron](https://github.com/matematicsolutions/patron)**. Patron = produkcyjny hostowany agent z Postgres + audit trail + UI. `contract-review-pl` = lekki skill CLI w Claude Code. Patron Contract Review Module ([ADR-0010](https://github.com/matematicsolutions/patron/blob/main/governance/adr/0010-contract-review-module-tabular.md)) to **wersja produkcyjna** tego samego use case.
+**This is not [Patron](https://github.com/matematicsolutions/patron)**. Patron = a production, hosted agent with Postgres + audit trail + UI. `contract-review-pl` = a lightweight CLI skill in Claude Code. The Patron Contract Review Module ([ADR-0010](https://github.com/matematicsolutions/patron/blob/main/governance/adr/0010-contract-review-module-tabular.md)) is the **production version** of the same use case.
 
-**To nie jest [lpm-pl](https://github.com/matematicsolutions/lpm-pl)**. lpm-pl = portfolio management spraw (status / scope / RAID). contract-review-pl = bulk extraction umow. Ortogonalne tematy, ale composable.
+**This is not [lpm-pl](https://github.com/matematicsolutions/lpm-pl)**. lpm-pl = matter portfolio management (status / scope / RAID). contract-review-pl = bulk contract extraction. Orthogonal topics, but composable.
 
-## Kontekst MateMatic (TWARDE OGRANICZENIA)
+## MateMatic context (HARD CONSTRAINTS)
 
-Repo prowadzi [MateMatic Solutions](https://matematicsolutions.com). Skill dotyczy:
+The repo is run by [MateMatic Solutions](https://matematicsolutions.com). The skill concerns:
 
-- **Tajemnica zawodowa** (PoA art. 6, URP art. 3) - skill **NIE wysyla** niezanonimizowanych imion / PESEL / adresow do LLM. Pseudonimizacja PII PRZED kazdym wywolaniem LLM ([CONSTITUTION.md](./CONSTITUTION.md) Zasada 1).
-- **RODO art. 5/25/30/32** - minimalizacja, privacy by design, mapowanie placeholderow trzymane lokalnie, gitignore.
-- **Multi-provider** ([CONSTITUTION.md](./CONSTITUTION.md) Zasada 2) - Ollama / Claude / Gemini / GPT wymiennie. Default Ollama lokalny dla RODO-safe maximum. Klucze providerow w `~/.config/contract-review-pl/providers.yaml` (gitignore), nigdy w kodzie.
-- **Mechaniczna walidacja cytatu** ([CONSTITUTION.md](./CONSTITUTION.md) Zasada 3) - kazda komorka tabeli ma cytat zwerifikowany w tekscie zrodlowym (substring match). Brak cytatu = komorka `null` + `confidence: failed`. Halucynacja niemozliwa na warstwie struktury.
+- **Professional secrecy** (PoA art. 6, URP art. 3) - the skill **does not send** un-anonymized names / PESEL (Polish national ID number) / addresses to an LLM. PII is pseudonymized BEFORE every LLM call ([CONSTITUTION.md](./CONSTITUTION.md) Principle 1).
+- **RODO (GDPR) art. 5/25/30/32** - minimization, privacy by design, placeholder mapping kept locally, gitignored.
+- **Multi-provider** ([CONSTITUTION.md](./CONSTITUTION.md) Principle 2) - Ollama / Claude / Gemini / GPT interchangeably. Default is local Ollama for maximum RODO-safe (GDPR-safe) posture. Provider keys live in `~/.config/contract-review-pl/providers.yaml` (gitignored), never in code.
+- **Mechanical citation validation** ([CONSTITUTION.md](./CONSTITUTION.md) Principle 3) - every table cell has a citation verified against the source text (substring match). No citation = cell `null` + `confidence: failed`. Hallucination is impossible at the structural layer.
 
-## Struktura repo
+## Repo structure
 
 ```
 skills/
   contract-review-pl/
-    SKILL.md             - implementacja skill (frontmatter + tresc)
-    helpers/             - skrypty Python (pseudonim, walidacja, .docx gen)
+    SKILL.md             - skill implementation (frontmatter + content)
+    helpers/             - Python scripts (pseudonymization, validation, .docx gen)
 examples/
-  portfel-nda-przyklad/  - 3 zanonimizowane NDA + schemat.yaml + oczekiwany output
+  portfel-nda-przyklad/  - 3 anonymized NDAs + schemat.yaml + expected output
 docs/
-  preprocessing-decyzja.md - drabinka decyzyjna preprocesora PDF
-CONSTITUTION.md          - 4 zasady konstytucyjne v1.0.0
-SPEC.md                  - specyfikacja techniczna v0.1.0-alpha
-CHANGELOG.md             - historia wersji
-README.md                - opis dla ludzi
+  preprocessing-decyzja.md - PDF preprocessor decision ladder
+CONSTITUTION.md          - 4 constitutional principles v1.0.0
+SPEC.md                  - technical specification v0.1.0-alpha
+CHANGELOG.md             - version history
+README.md                - human-facing description
 LICENSE                  - Apache 2.0
-AGENTS.md                - ten plik
-CLAUDE.md                - wskaznik z @AGENTS.md import dla Claude Code
+AGENTS.md                - this file
+CLAUDE.md                - pointer with @AGENTS.md import for Claude Code
 ```
 
-## Build i test
+## Build and test
 
-Repo nie ma kompilacji - to skill Markdown + helpers Python.
+The repo has no compilation step - it is a Markdown skill + Python helpers.
 
-"Test" = przepuszczenie skilla przez **zanonimizowany portfel testowy** w [examples/portfel-nda-przyklad/](./examples/portfel-nda-przyklad/) i porownanie outputu z `expected/RAPORT.docx`.
+"Test" = running the skill against the **anonymized test portfolio** in [examples/portfel-nda-przyklad/](./examples/portfel-nda-przyklad/) and comparing the output with `expected/RAPORT.docx`.
 
-Test krytyczny **pseudonimizacji**:
-- Mock LLM provider (zapis promptu do pliku zamiast wysyl)
-- Assert: zapisany prompt **NIE zawiera** PESEL / imienia / nazwiska z testowej umowy
-- Assert: zapisany prompt **zawiera** placeholdery `[OSOBA_1]` itp.
+Critical **pseudonymization** test:
+- Mock LLM provider (write the prompt to a file instead of sending it)
+- Assert: the written prompt **does not contain** any PESEL / first name / surname from the test contract
+- Assert: the written prompt **does contain** placeholders `[OSOBA_1]` etc.
 
-Instalacja lokalna (Claude Code):
+Local install (Claude Code):
 
 ```bash
 cd ~/.claude/skills/
@@ -60,45 +60,45 @@ git clone https://github.com/matematicsolutions/matematic-contract-review-pl
 ln -s matematic-contract-review-pl/skills/contract-review-pl contract-review-pl
 ```
 
-Na Windows zamiast symlinka - kopia folderu `skills/contract-review-pl/` do `~/.claude/skills/`.
+On Windows, instead of a symlink - copy the `skills/contract-review-pl/` folder into `~/.claude/skills/`.
 
-## Zasady pisania skilla
+## Skill authoring rules
 
-- **Polski jezyk** - skill rozmawia z prawnikiem po polsku, frontmatter description triggeruje po polskich frazach ("audyt umow", "tabular review", "bulk audit NDA", "przejrzyj portfel kontraktow").
-- **Judgment calls embedded** - skill rozumie kiedy "wartosc do uzgodnienia" znaczy "luka", kiedy klauzula jest niejednoznaczna, kiedy brakuje cytatu zrodlowego.
-- **RAG framework** - kazda umowa dostaje status Czerwony / Bursztynowy / Zielony per zdefiniowane czerwone flagi.
-- **Output `.docx` z naglowkiem kancelarii** - gotowy do wyslania do partnera, nie do przepisywania.
-- **Bez polskich znakow w commit messages** (konwencja organizacji).
-- **Wewnetrzny review tresci (2 rundy)** przed kazdym commitem zmieniajacym tresc SKILL.md / README.md / CONSTITUTION.md.
+- **Polish language** - the skill talks to the lawyer in Polish, and the frontmatter description triggers on Polish phrases ("audyt umow", "tabular review", "bulk audit NDA", "przejrzyj portfel kontraktow").
+- **Judgment calls embedded** - the skill understands when "value to be agreed" means "gap", when a clause is ambiguous, when a source citation is missing.
+- **RAG framework** - each contract gets a Red / Amber / Green status per the defined red flags.
+- **`.docx` output with a firm letterhead** - ready to send to a partner, not to be rewritten.
+- **No Polish diacritics in commit messages** (organization convention).
+- **Internal content review (2 rounds)** before every commit that changes the content of SKILL.md / README.md / CONSTITUTION.md.
 
-## Czego NIE robic (twarde reguly)
+## What NOT to do (hard rules)
 
-- **NIE wysylaj niezanonimizowanych danych osobowych do LLM** - bezwzglednie. Zasada konstytucyjna 1.
-- **NIE faworyzuj zadnego providera** w defaultach (oprocz Ollama dla RODO-safe). Wszystkie 4 maja byc rownouprawnione. Zasada konstytucyjna 2.
-- **NIE akceptuj odpowiedzi LLM bez cytatu** - jezeli LLM zwroci wartosc bez cytatu lub z cytatem ktorego nie ma w tekscie, komorka `null` + `confidence: failed`. Zasada konstytucyjna 3.
-- **NIE nazywaj firm w summary outputu** - "Strona A", "Dostawca", "Klient". Zasada konstytucyjna 4.
-- **NIE commituj kluczy providerow** ani prawdziwych umow klientow w `examples/`.
-- **NIE buduj web UI** - skill jest CLI-only przez Claude Code. Web UI to Patron Contract Review Module (ADR-0010), nie ten skill.
+- **Do NOT send un-anonymized personal data to an LLM** - absolutely. Constitutional principle 1.
+- **Do NOT favor any provider** in defaults (except Ollama for RODO-safe/GDPR-safe). All 4 must be on equal footing. Constitutional principle 2.
+- **Do NOT accept an LLM answer without a citation** - if the LLM returns a value with no citation, or with a citation absent from the text, the cell is `null` + `confidence: failed`. Constitutional principle 3.
+- **Do NOT name companies in the output summary** - "Party A", "Supplier", "Client". Constitutional principle 4.
+- **Do NOT commit provider keys** or real client contracts in `examples/`.
+- **Do NOT build a web UI** - the skill is CLI-only through Claude Code. A web UI is the Patron Contract Review Module (ADR-0010), not this skill.
 
-## Zrodla prawdy (kolejnosc czytania)
+## Sources of truth (reading order)
 
-1. [README.md](./README.md) - opis dla ludzi
-2. [CONSTITUTION.md](./CONSTITUTION.md) - 4 zasady konstytucyjne v1.0.0
-3. [SPEC.md](./SPEC.md) - specyfikacja techniczna v0.1.0-alpha
-4. [skills/contract-review-pl/SKILL.md](./skills/contract-review-pl/SKILL.md) - implementacja
-5. [examples/portfel-nda-przyklad/](./examples/portfel-nda-przyklad/) - prawdziwe pelne przejscie
-6. [CHANGELOG.md](./CHANGELOG.md) - historia wersji
+1. [README.md](./README.md) - human-facing description
+2. [CONSTITUTION.md](./CONSTITUTION.md) - 4 constitutional principles v1.0.0
+3. [SPEC.md](./SPEC.md) - technical specification v0.1.0-alpha
+4. [skills/contract-review-pl/SKILL.md](./skills/contract-review-pl/SKILL.md) - implementation
+5. [examples/portfel-nda-przyklad/](./examples/portfel-nda-przyklad/) - a real full walkthrough
+6. [CHANGELOG.md](./CHANGELOG.md) - version history
 
-## Kompatybilnosc agentow
+## Agent compatibility
 
-Ten plik (AGENTS.md) jest standardem [agents.md](https://agents.md) (Linux Foundation). Skill `contract-review-pl` pisany pod Claude Code, ale pattern (pseudonimizacja PRZED LLM, mechaniczna walidacja cytatu, `.docx` output) jest **agent-agnostic** - mozesz przepisac SKILL.md pod Cursor / Codex / Devin adaptujac tylko frontmatter.
+This file (AGENTS.md) follows the [agents.md](https://agents.md) standard (Linux Foundation). The `contract-review-pl` skill is written for Claude Code, but the pattern (pseudonymization BEFORE the LLM, mechanical citation validation, `.docx` output) is **agent-agnostic** - you can rewrite SKILL.md for Cursor / Codex / Devin by adapting only the frontmatter.
 
-Dla Claude Code dodatkowo istnieje plik [CLAUDE.md](./CLAUDE.md) importujacy ten dokument przez `@AGENTS.md`.
+For Claude Code there is additionally a [CLAUDE.md](./CLAUDE.md) file importing this document via `@AGENTS.md`.
 
-## Licencja i atrybucja
+## License and attribution
 
-- **Apache 2.0** - patrz [LICENSE](./LICENSE). Mozesz wziac, modyfikowac, sprzedawac wdrozenie. Wymagamy atrybucji.
-- Pattern UX: cherry-pick z [jamietso/Tabular_Review](https://github.com/jamietso/Tabular_Review) (MIT, snapshot 2026-05-21).
-- Tresc skilla: napisana od zera pod polskie realia.
+- **Apache 2.0** - see [LICENSE](./LICENSE). You may take, modify, and sell a deployment. We require attribution.
+- UX pattern: cherry-picked from [jamietso/Tabular_Review](https://github.com/jamietso/Tabular_Review) (MIT, snapshot 2026-05-21).
+- Skill content: written from scratch for Polish reality.
 
-Cytowanie: *MateMatic Solutions (2026), matematic-contract-review-pl - tabular review umow dla polskiej kancelarii, https://github.com/matematicsolutions/matematic-contract-review-pl, Apache 2.0.*
+Citation: *MateMatic Solutions (2026), matematic-contract-review-pl - tabular review of contracts for a Polish law firm, https://github.com/matematicsolutions/matematic-contract-review-pl, Apache 2.0.*
