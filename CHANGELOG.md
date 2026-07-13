@@ -2,6 +2,23 @@
 
 Format zgodny z [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersjonowanie [SEMVER](https://semver.org/lang/pl/).
 
+## [0.1.2-alpha] - 2026-07-13
+
+### Dodane (wzorce z apiotrowski-afk/commercial-legal-pl, Apache-2.0, adaptacja od zera)
+
+- **Faza 5a: dwuetapowa weryfikacja spojnosci odeslan** dla dlugich umow (> 15 stron / > 5000 slow / > 10 odeslan). Pass 1 buduje inwentarz wszystkich odeslan (jednoznaczne "§ X ust. Y" i "zalacznik nr N", semantyczne "z zastrzezeniem", definicyjne terminy z wielkiej litery) ZANIM cokolwiek oceni - to obchodzi attention dilution w dlugim kontekscie. Pass 2 weryfikuje kazde odeslanie osobno (cel istnieje? tresc celu pasuje do kontekstu?). Raport: odeslanie -> cel -> status OK / WISZACE / SPRZECZNE; kazde WISZACE i SPRZECZNE = czerwona flaga (kategoria `odeslanie`).
+- **Tryb odbiorcy PRAWNIK / LAIK.** PRAWNIK = pelna terminologia, raport jak dotad. LAIK = jezyk uproszczony, zakaz kategorycznych zalecen ("do omowienia z prawnikiem" zamiast "podpisuj / nie podpisuj"), obowiazkowy watermark "DRAFT - wymaga weryfikacji przez prawnika" na poczatku i koncu outputu oraz w naglowku stron `.docx`. Fail-closed: brak sygnalow = LAIK.
+
+### Pochodzenie wzorcow
+
+Cherry-pick z [apiotrowski-afk/commercial-legal-pl](https://github.com/apiotrowski-afk/commercial-legal-pl) (Apache-2.0, autor Adam Piotrowski, radca prawny / KTZR, snapshot 2026-07-13). Podpatrzone pliki: `workflows/weryfikacja-spojnosci-odeslan.md` (dwuetapowosc Pass 1 / Pass 2, statusy raportu, anti-patterns umow edytowanych etapowo), `references/rdzen-ktzr.md` (regula R3 PRAWNIK / LAIK z watermarkiem draftu). Zero kodu skopiowanego - tresc napisana od zera pod bulk tabular review.
+
+### Czego NIE bierzemy z commercial-legal-pl
+
+- STOP-ow konwersacyjnych miedzy Pass 1 a Pass 2 - nasz skill dziala batchowo na folderze umow, nie w dialogu o jednej umowie
+- eskalacji do NotebookLM dla umow 30+ stron - zewnetrzne narzedzie poza scope skilla CLI
+- defaultu PRAWNIK przy braku sygnalow - u nas fail-closed w strone LAIKA
+
 ## [0.1.1-alpha] - 2026-05-21
 
 ### Dodane (cherry-pick 3 patternow operacyjnych z gregmos/PII-Shield MIT)

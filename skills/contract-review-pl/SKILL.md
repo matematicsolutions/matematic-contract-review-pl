@@ -99,6 +99,41 @@ Dla kazdej kolumny z `red_flag_jezeli` w schemacie:
 2. **Jezeli spelniony** -> czerwona flaga, wpis do sekcji "Czerwone flagi"
 3. **Per umowa** - jezeli >= 1 czerwona flaga = status **Czerwony**, jezeli 0 ale >= 1 komorka `failed` = **Bursztynowy**, inaczej **Zielony**
 
+### Faza 5a: Weryfikacja spojnosci odeslan - dwuetapowa, dla dlugich umow (v0.1.2)
+
+Wzorzec z apiotrowski-afk/commercial-legal-pl (Apache-2.0), adaptacja od zera. Ich `workflows/weryfikacja-spojnosci-odeslan.md` rozdziela inwentaryzacje od oceny, bo model dobrze czyta kazdy paragraf osobno, a gubi relacje miedzy odleglymi fragmentami (attention dilution). Odeslanie w § 18 do definicji w § 2 to dokladnie taki przypadek.
+
+**Kiedy uruchamiac** (per umowa, po Fazie 2, na tekscie pseudonimowanym):
+- umowa > 15 stron lub > 5000 slow, albo > 15 paragrafow
+- > 10 odeslan miedzyparagrafowych ("§ X ust. Y")
+- uzytkownik prosi wprost: "sprawdz odeslania", "czy paragrafy sie zgadzaja"
+
+Dla krotszych umow pomijaj cala faze - wystarczy judgment call "sprzeczne klauzule" z sekcji nizej.
+
+**PASS 1 - INWENTARZ (lista, nie analiza).** Przejdz caly tekst i wypisz KAZDE odeslanie z lokalizacja zrodlowa, zanim cokolwiek ocenisz. Trzy kategorie:
+1. jednoznaczne: "§ 5 ust. 2", "zalacznik nr 3"
+2. semantyczne: "powyzsze postanowienia", "z zastrzezeniem § X", "niniejszy paragraf"
+3. definicyjne: terminy z wielkiej litery ("Wykonawca", "System") vs paragraf definicji
+
+Na tym etapie obowiazuje zakaz wnioskowania. Sama lista. To wymusza pelne przejscie przez dokument bez skrotow uwagi.
+
+**PASS 2 - WERYFIKACJA (kazde odeslanie osobno).** Dla kazdej pozycji inwentarza odpowiedz na dwa pytania: (1) czy cel istnieje w tekscie, (2) czy tresc celu pasuje do kontekstu odeslania. Do tabeli wpisz skrot tresci celu - to zmusza do faktycznego zajrzenia w § docelowy zamiast ufania pamieci kontekstu.
+
+**Format raportu** (osobna sekcja "Odeslania" w RAPORT `.docx`, per umowa):
+
+| Odeslanie | Zrodlo | Cel | Status |
+|---|---|---|---|
+| "zgodnie z § 3 ust. 1" | § 4 ust. 2 | § 3 ust. 1: stawka 250 PLN netto/h | OK |
+| "zgodnie z § 17" | § 15 ust. 2 | brak - umowa konczy sie na § 16 | WISZACE |
+| "kary umowne z § 9 ust. 3" | § 12 ust. 1 | § 9 ust. 3 reguluje kare za poufnosc, nie za zwloke | SPRZECZNE |
+
+Statusy:
+- **OK** - cel istnieje, tresc pasuje do kontekstu
+- **WISZACE** - cel nie istnieje: usuniety paragraf, zalacznik wymieniony ale nieobecny, puste pole "§___"
+- **SPRZECZNE** - cel istnieje, ale jego tresc nie pasuje do kontekstu odeslania (typowy slad renumeracji po edycji)
+
+Kazde WISZACE i SPRZECZNE = czerwona flaga w Fazie 5 (kategoria `odeslanie`), liczy sie do statusu RAG umowy.
+
 ### Faza 6: Depseudonimizacja outputu lokalnie
 
 Przed generacja `.docx`:
@@ -191,6 +226,26 @@ Tygodnie pozniej prawnik moze otworzyc plik: `contract-review-pl --reopen-sessio
 - 4 luki (z propozycja "ACTION: prawnik manualnie sprawdz strone N")
 - 72 cytaty zrodlowe (pelne, z numerem strony jezeli dostepne)
 - Metadata raportu (audit-friendly)
+
+## Tryb odbiorcy: PRAWNIK / LAIK (v0.1.2)
+
+Wzorzec z apiotrowski-afk/commercial-legal-pl (Apache-2.0), adaptacja od zera - u nich regula R3 w `references/rdzen-ktzr.md`. Nasza roznica: fail-closed w strone LAIKA (u nich default to PRAWNIK).
+
+| Sygnal | Tryb |
+|--------|------|
+| "jestem radca / adwokatem", kontekst kancelarii, zargon procesowy, prosba o raport dla partnera | PRAWNIK |
+| "nie jestem prawnikiem", "musze to podpisac", "jestem klientem / wlascicielem firmy" | LAIK |
+| brak sygnalow albo watpliwosc | **LAIK** (fail-closed) |
+
+**Tryb PRAWNIK:** raport jak dotad - pelna terminologia, minimalne ostrzezenia, `.docx` gotowy do wyslania do partnera.
+
+**Tryb LAIK:**
+- jezyk uproszczony: bez lacinskich zwrotow, kazdy termin fachowy rozwiniety w nawiasie przy pierwszym uzyciu ("kara umowna (z gory ustalona kwota za naruszenie)")
+- zakaz kategorycznych zalecen: zamiast "podpisuj" / "nie podpisuj" pisz "do omowienia z prawnikiem, bo..."
+- obowiazkowy watermark **"DRAFT - wymaga weryfikacji przez prawnika"** na poczatku i na koncu kazdego outputu; w `.docx` dodatkowo w naglowku kazdej strony
+- czerwone flagi zostaja w raporcie (to informacja, nie porada), ale kolumna "rekomendacja" zmienia sie w "pytanie do prawnika"
+
+Uzasadnienie fail-closed: prawnik z niepotrzebnym watermarkiem traci 2 sekundy. Laik z raportem wygladajacym na gotowa opinie moze podpisac zla umowe.
 
 ## Bezpieczenstwo
 
