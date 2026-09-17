@@ -31,7 +31,7 @@ Pelny przyklad input/output: [examples/portfel-nda-przyklad/](examples/portfel-n
 
 ## Filozofia (4 zasady, patrz [CONSTITUTION.md](CONSTITUTION.md))
 
-1. **RODO-safe by default** - pseudonimizacja PII PRZED kazdym wywolaniem LLM. Skill nie wysyla niezanonimizowanych imion / PESEL / adresow do chmury.
+1. **Pseudonimizacja domyslnie** - PII maskowane PRZED kazdym wywolaniem LLM. Skill nie wysyla niezanonimizowanych imion / PESEL / adresow do chmury.
 2. **Multi-provider LLM** - skill rozmawia z Claude / Ollama / Gemini wymiennie (decyzja kancelarii, nie skilla). Default Ollama lokalny (zero transferu do US).
 3. **Cytat fizycznie obecny w tekscie** - kazda komorka tabeli ma cytat ktory mechanicznie zwerifikowano w tekscie zrodlowym. Brak cytatu = brak komorki. Halucynacja niemozliwa na warstwie struktury (model moze zle zinterpretowac, ale nie wymysli klauzuli ktorej fizycznie nie ma).
 4. **Bez nazywania firm w outputach** - skill mowi "Strona A", "Strona B", "Dostawca", "Klient" w summary; pelne nazwy tylko w tabeli (gdzie sa wprost wyciagniete z umowy).
